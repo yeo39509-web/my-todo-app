@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#ffffff">
+<title>나의 할 일</title>
+<link rel="manifest" href="manifest.json">
+<style>
+*{box-sizing:border-box} body{margin:0;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Noto Sans KR",sans-serif;background:#f5f6f8;color:#202124}
+.app{max-width:720px;margin:auto;min-height:100vh;background:#fff}
+header{padding:20px 18px 12px;position:sticky;top:0;background:#fff;z-index:2;border-bottom:1px solid #eee}
+h1{font-size:24px;margin:0 0 4px}.date{color:#777;font-size:14px}
+.tabs{display:flex;gap:8px;padding:12px 16px;overflow:auto;border-bottom:1px solid #eee}
+.tabs button{border:0;background:#f0f1f3;padding:9px 13px;border-radius:20px;white-space:nowrap}
+.tabs button.active{background:#202124;color:#fff}
+main{padding:16px}
+.section-title{display:flex;justify-content:space-between;align-items:center;margin:8px 0 10px;font-weight:700}
+.count{color:#777;font-size:13px}
+.card{border:1px solid #e4e5e7;border-radius:14px;padding:13px;margin-bottom:10px;background:#fff}
+.card.overdue{border-color:#e57373;background:#fffafa}
+.row{display:flex;gap:10px;align-items:flex-start}.check{width:22px;height:22px;margin-top:2px}
+.title{font-weight:650;flex:1}.done{text-decoration:line-through;color:#999}
+.meta{font-size:12px;color:#777;margin-top:6px}
+.badge{display:inline-block;padding:3px 7px;border-radius:8px;background:#f0f1f3;margin-right:5px}
+.actions{display:flex;gap:6px;margin-top:10px}.actions button{border:1px solid #ddd;background:#fff;border-radius:8px;padding:6px 9px}
+.fab{position:fixed;right:20px;bottom:24px;border:0;border-radius:50%;width:58px;height:58px;font-size:28px;background:#202124;color:white;box-shadow:0 5px 20px #0003}
+.empty{text-align:center;color:#999;padding:40px 10px}
+dialog{width:min(92%,520px);border:0;border-radius:18px;padding:0;box-shadow:0 10px 50px #0004}
+form{padding:20px} label{display:block;font-size:13px;margin:12px 0 5px;color:#555}
+input,textarea,select{width:100%;padding:11px;border:1px solid #ddd;border-radius:10px;font:inherit}
+textarea{min-height:80px;resize:vertical}.form-actions{display:flex;gap:8px;margin-top:18px}.form-actions button{flex:1;padding:11px;border:0;border-radius:10px}
+.save{background:#202124;color:#fff}.cancel{background:#eee}
+</style>
+</head>
+<body>
+<div class="app">
+<header>
+  <h1>나의 할 일</h1>
+  <div class="date" id="todayText"></div>
+</header>
+<nav class="tabs">
+  <button data-filter="today" class="active">오늘</button>
+  <button data-filter="all">전체</button>
+  <button data-filter="doing">진행 중</button>
+  <button data-filter="done">완료</button>
+</nav>
+<main id="list"></main>
+<div style="padding:0 16px 18px;color:#777;font-size:12px;text-align:center">
+① 예정 → ② 진행 중 → ③ 완료
+</div>
+<button class="fab" id="addBtn" aria-label="할 일 추가">＋</button>
+</div>
+
+<dialog id="dlg">
+<form id="taskForm">
+<h2 id="dialogTitle">할 일 추가</h2>
+<input type="hidden" id="taskId">
+<label>할 일</label><input id="title" required placeholder="예: 자동차 부품 주문">
+<label>날짜</label><input id="date" type="date" required>
+<label>시간</label><input id="time" type="time">
+<label>상태</label>
+<select id="status"><option value="todo">① 예정</option><option value="doing">② 진행 중</option><option value="done">③ 완료</option></select>
+<label>중요도</label>
+<select id="priority"><option value="normal">보통</option><option value="high">중요</option><option value="low">낮음</option></select>
+<label>메모</label><textarea id="memo" placeholder="메모를 입력하세요"></textarea>
+<div class="form-actions"><button type="button" class="cancel" id="cancelBtn">취소</button><button class="save">저장</button></div>
+</form>
+</dialog>
+
+<script>
+const KEY="myTodoTasksV1";
+let tasks=JSON.parse(localStorage.getItem(KEY)||"[]");
+let filter="today";
+const $=id=>document.getElementById(id);
+const today=()=>new Date().toISOString().slice(0,10);
+function save(){localStorage.setItem(KEY,JSON.stringify(tasks));render();}
+function fmtDate(s){if(!s)return""; const d=new Date(s+"T00:00:00"); return `${d.getMonth()+1}월 ${d.getDate()}일`;}
+function priorityText(p){return p==="high"?"중요":p==="low"?"낮음":"보통";}
+function visible(){
+ const t=today();
+ if(filter==="today") return tasks.filter(x=>x.date===t && x.status!=="done");
+ if(filter==="doing") return tasks.filter(x=>x.status==="doing");
+ if(filter==="done") return tasks.filter(x=>x.status==="done");
+ return tasks;
+}
+function render(){
+ const d=new Date(); $("todayText").textContent=d.toLocaleDateString("ko-KR",{year:"numeric",month:"long",day:"numeric",weekday:"long"});
+ const arr=visible().sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time));
+ $("list").innerHTML="";
+ if(!arr.length){$("list").innerHTML='<div class="empty">표시할 일이 없습니다.<br>＋ 버튼으로 할 일을 추가해보세요.</div>';return}
+ arr.forEach(x=>{
+   const overdue=x.status!=="done" && x.date<today();
+   const card=document.createElement("div"); card.className="card"+(overdue?" overdue":"");
+   card.innerHTML=`
+   <div class="row">
+    <input class="check" type="checkbox" ${x.status==="done"?"checked":""} data-check="${x.id}">
+    <div style="flex:1">
+      <div class="title ${x.status==="done"?"done":""}">${esc(x.title)}</div>
+      <div class="meta">
+        <span class="badge">${fmtDate(x.date)}${x.time?" "+x.time:""}</span>
+        <span class="badge">${priorityText(x.priority)}</span>
+        <span class="badge">${x.status==="doing"?"② 진행 중":x.status==="done"?"③ 완료":"① 예정"}</span>
+        ${overdue?'<span class="badge">기한 지남</span>':""}
+      </div>
+      ${x.memo?`<div class="meta">${esc(x.memo)}</div>`:""}
+      <div class="actions">
+<button data-next="${x.id}">${x.status==="todo"?"② 진행 시작":x.status==="doing"?"③ 완료 처리":"↩ ① 예정으로"}</button>
+<button data-edit="${x.id}">수정</button><button data-del="${x.id}">삭제</button>
+</div>
+    </div>
+   </div>`;
+   $("list").appendChild(card);
+ });
+}
+function esc(s){return String(s||"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));}
+function openAdd(){
+ $("dialogTitle").textContent="할 일 추가"; $("taskId").value="";
+ $("title").value=""; $("date").value=today(); $("time").value="";
+ $("status").value="todo"; $("priority").value="normal"; $("memo").value="";
+ $("dlg").showModal();
+}
+function openEdit(id){
+ const x=tasks.find(t=>t.id===id); if(!x)return;
+ $("dialogTitle").textContent="할 일 수정"; $("taskId").value=x.id;
+ $("title").value=x.title; $("date").value=x.date; $("time").value=x.time||"";
+ $("status").value=x.status; $("priority").value=x.priority; $("memo").value=x.memo||"";
+ $("dlg").showModal();
+}
+$("taskForm").addEventListener("submit",e=>{
+ e.preventDefault();
+ const id=$("taskId").value;
+ const obj={id:id||crypto.randomUUID(),title:$("title").value.trim(),date:$("date").value,time:$("time").value,status:$("status").value,priority:$("priority").value,memo:$("memo").value.trim(),updatedAt:Date.now()};
+ if(id){const i=tasks.findIndex(x=>x.id===id);tasks[i]=obj}else tasks.push(obj);
+ $("dlg").close();save();
+});
+$("list").addEventListener("click",e=>{
+ const edit=e.target.dataset.edit, del=e.target.dataset.del, next=e.target.dataset.next;
+ if(edit)openEdit(edit);
+ if(del&&confirm("이 할 일을 삭제할까요?")){tasks=tasks.filter(x=>x.id!==del);save();}
+ if(next){
+   const x=tasks.find(t=>t.id===next);
+   if(x){
+     x.status=x.status==="todo"?"doing":x.status==="doing"?"done":"todo";
+     save();
+   }
+ }
+ if(e.target.dataset.check){const id=e.target.dataset.check;const x=tasks.find(t=>t.id===id);x.status=e.target.checked?"done":"todo";save();}
+});
+document.querySelector(".tabs").addEventListener("click",e=>{
+ if(e.target.dataset.filter){filter=e.target.dataset.filter;document.querySelectorAll(".tabs button").forEach(b=>b.classList.remove("active"));e.target.classList.add("active");render();}
+});
+$("addBtn").onclick=openAdd;$("cancelBtn").onclick=()=>$("dlg").close();
+render();
+</script>
+</body>
+</html>
