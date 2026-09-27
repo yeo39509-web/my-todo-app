@@ -1,9 +1,15 @@
 {
-  "name":"나의 할 일",
-  "short_name":"나의 할 일",
-  "start_url":"./index.html",
-  "display":"standalone",
-  "background_color":"#ffffff",
-  "theme_color":"#ffffff",
-  "icons":[]
+  "name": "스케줄",
+  "short_name": "스케줄",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff",
+  "icons": [
+    {
+      "src": "./icon.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
 }
