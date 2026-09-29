@@ -17,7 +17,7 @@ header{padding:14px 16px 10px;position:sticky;top:0;background:#fff;z-index:10;b
 .brand-row{display:flex;align-items:center;gap:9px}
 .brand-icon{width:26px;height:26px;border:2px solid var(--blue);border-radius:7px;color:var(--blue);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:15px}
 h1{font-size:19px;margin:0;font-weight:750;letter-spacing:-.3px}
-.settings-btn{margin-left:auto;border:0;background:transparent;font-size:20px;color:#69717b;padding:4px;cursor:pointer}
+.excel-btn{margin-left:auto;border:1px solid #dfe4e9;background:#f7f9fb;color:#4f5964;border-radius:8px;padding:5px 8px;font-size:10px;font-weight:700;display:flex;gap:3px;align-items:center;cursor:pointer}.excel-btn span{font-size:10px}.settings-btn{border:0;background:transparent;font-size:20px;color:#69717b;padding:4px;cursor:pointer}
 .date{color:#777;font-size:12px;margin-top:5px}
 .quick-add{display:flex;gap:7px;padding:11px 12px 7px;background:#fff}
 .quick-add input{flex:1;min-width:0;height:38px;border:1px solid #e1e5ea;border-radius:8px;padding:0 12px;font-size:12px;outline:none;background:#fafbfc}
@@ -87,7 +87,7 @@ textarea{min-height:80px;resize:vertical}.form-actions{display:flex;gap:8px;marg
 <body>
 <div class="app">
 <header>
-  <div class="brand-row"><div class="brand-icon">✓</div><h1>스케줄</h1><button class="settings-btn" id="settingsBtn" aria-label="설정">⚙</button></div>
+  <div class="brand-row"><div class="brand-icon">✓</div><h1>스케줄</h1><button class="excel-btn" id="excelBtn" aria-label="엑셀로 저장">⇩<span>엑셀</span></button><button class="settings-btn" id="settingsBtn" aria-label="설정">⚙</button></div>
   <div class="date" id="todayText"></div>
 </header>
 <div class="quick-add">
@@ -155,12 +155,13 @@ function esc(s){return String(s||"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&l
 
 function updateCounts(){
   $("allCount").textContent=tasks.length;
-  $("todayCount").textContent=tasks.filter(x=>x.date===today()&&x.status!=="done").length;
+  $("todayCount").textContent=tasks.filter(x=>x.date===today()).length;
   $("doingCount").textContent=tasks.filter(x=>x.status==="doing").length;
   $("doneCount").textContent=tasks.filter(x=>x.status==="done").length;
 }
 
 function render(){
+ updateCounts();
  const d=new Date();
  $("todayText").textContent=d.toLocaleDateString("ko-KR",{year:"numeric",month:"long",day:"numeric",weekday:"long"});
  const cal=filter==="calendar";
@@ -268,17 +269,57 @@ $("taskForm").addEventListener("submit",e=>{
  $("dlg").close();save();
 });
 $("list").addEventListener("click",e=>{
- const edit=e.target.dataset.edit,del=e.target.dataset.del,next=e.target.dataset.next;
- if(edit)openEdit(edit);
- if(del&&confirm("이 할 일을 삭제할까요?")){tasks=tasks.filter(x=>x.id!==del);save()}
- if(next){const x=tasks.find(t=>t.id===next);if(x){x.status=x.status==="todo"?"doing":x.status==="doing"?"done":"todo";save()}}
+ const btn=e.target.closest("button");
+ if(!btn)return;
+ const edit=btn.dataset.edit,del=btn.dataset.del,next=btn.dataset.next;
+ if(edit){openEdit(edit);return}
+ if(del){
+  if(confirm("이 할 일을 삭제할까요?")){
+   tasks=tasks.filter(x=>x.id!==del);
+   save();
+  }
+  return;
+ }
+ if(next){
+  const x=tasks.find(t=>t.id===next);
+  if(x){
+   x.status=x.status==="todo"?"doing":x.status==="doing"?"done":"todo";
+   save();
+  }
+ }
 });
 $("list").addEventListener("change",e=>{
  if(e.target.dataset.check){const x=tasks.find(t=>t.id===e.target.dataset.check);if(x){x.status=e.target.checked?"done":"todo";save()}}
 });
 document.querySelector(".tabs").addEventListener("click",e=>{
- if(e.target.dataset.filter){filter=e.target.dataset.filter;document.querySelectorAll(".tabs button").forEach(b=>b.classList.remove("active"));e.target.classList.add("active");document.querySelectorAll(".bottom-item").forEach(b=>b.classList.toggle("active",b.dataset.nav===filter));render()}
+ const btn=e.target.closest("button[data-filter]");
+ if(btn){
+  filter=btn.dataset.filter;
+  document.querySelectorAll(".tabs button").forEach(b=>b.classList.toggle("active",b===btn));
+  document.querySelectorAll(".bottom-item").forEach(b=>b.classList.toggle("active",b.dataset.nav===filter));
+  render();
+ }
 });
+
+
+function exportToExcel(){
+  if(!tasks.length){alert("저장할 일정이 없습니다.");return;}
+  const statusName={todo:"예정",doing:"진행 중",done:"완료"};
+  const priorityName={normal:"보통",high:"중요",low:"낮음"};
+  const sorted=[...tasks].sort((a,b)=>(a.date||"").localeCompare(b.date||"")||(a.time||"").localeCompare(b.time||""));
+  const escExcel=v=>String(v??"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+  const rows=sorted.map((x,i)=>`<tr><td>${i+1}</td><td>${escExcel(x.date)}</td><td>${escExcel(x.time||"")}</td><td>${escExcel(x.title)}</td><td>${escExcel(statusName[x.status]||"")}</td><td>${escExcel(priorityName[x.priority]||"")}</td><td>${escExcel(x.memo||"")}</td></tr>`).join("");
+  const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"><style>table{border-collapse:collapse;font-family:"Malgun Gothic",Arial,sans-serif}th,td{border:1px solid #999;padding:7px 10px}th{font-weight:bold;background:#eaf3ff}</style></head><body><table><tr><th>번호</th><th>날짜</th><th>시간</th><th>할 일</th><th>상태</th><th>중요도</th><th>메모</th></tr>${rows}</table></body></html>`;
+  const blob=new Blob(["\ufeff",html],{type:"application/vnd.ms-excel;charset=utf-8"});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement("a");
+  const d=new Date();
+  const stamp=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+  a.href=url;a.download=`스케줄_${stamp}.xls`;
+  document.body.appendChild(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+$("excelBtn").onclick=exportToExcel;
 
 $("quickAddBtn").onclick=()=>{
   const input=$("quickTitle");
