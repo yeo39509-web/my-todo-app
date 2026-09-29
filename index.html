@@ -321,16 +321,41 @@ function exportToExcel(){
 }
 $("excelBtn").onclick=exportToExcel;
 
-$("quickAddBtn").onclick=()=>{
+function createQuickTask(openEditAfter=false){
   const input=$("quickTitle");
   const title=input.value.trim();
   if(!title){input.focus();return}
-  tasks.push({id:crypto.randomUUID(),title,date:today(),time:"",status:"todo",priority:"normal",memo:"",updatedAt:Date.now()});
+
+  const id=crypto.randomUUID();
+  tasks.push({
+    id:id,
+    title:title,
+    date:today(),
+    time:"",
+    status:"todo",
+    priority:"normal",
+    memo:"",
+    updatedAt:Date.now()
+  });
+
   input.value="";
   save();
-  input.focus();
-};
-$("quickTitle").addEventListener("keydown",e=>{if(e.key==="Enter")$("quickAddBtn").click()});
+
+  if(openEditAfter){
+    openEdit(id);
+  }else{
+    input.focus();
+  }
+}
+
+$("quickAddBtn").onclick=()=>createQuickTask(false);
+
+$("quickTitle").addEventListener("keydown",e=>{
+  if(e.key==="Enter"){
+    e.preventDefault();
+    createQuickTask(true);
+  }
+});
 
 document.querySelectorAll(".bottom-item").forEach(btn=>{
   btn.onclick=()=>{
