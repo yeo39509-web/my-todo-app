@@ -82,6 +82,26 @@ textarea{min-height:80px;resize:vertical}.form-actions{display:flex;gap:8px;marg
  .day{min-height:92px;padding:9px}.calendar-grid{gap:7px}
 }
 
+
+/* 구매관리 */
+.purchase-home{padding:0 0 20px}
+.purchase-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-bottom:12px}
+.purchase-stat{border:1px solid #e5e8ec;border-radius:10px;padding:9px 7px;text-align:center;background:#fff}
+.purchase-stat strong{display:block;font-size:17px}.purchase-stat span{font-size:9px;color:#777}
+.purchase-filter{display:flex;gap:6px;margin-bottom:10px;overflow:auto}.purchase-filter button{border:0;background:#f2f4f7;border-radius:17px;padding:7px 11px;font-size:10px;white-space:nowrap}.purchase-filter button.active{background:var(--blue);color:#fff}
+.purchase-search{width:100%;height:38px;border:1px solid #e1e5ea;border-radius:9px;padding:0 11px;font-size:11px;margin-bottom:10px}
+.purchase-card{border:1px solid #e2e6ea;border-radius:11px;padding:11px;margin-bottom:8px;background:#fff;box-shadow:0 1px 2px #00000008;cursor:pointer}
+.purchase-card.pending{border-color:#f0d58a}.purchase-card.done{border-color:#b9dfc7;background:#fcfffd}
+.purchase-card-top{display:flex;align-items:flex-start;gap:7px}.purchase-title{font-weight:700;font-size:13px;flex:1}.purchase-status{font-size:9px;border-radius:10px;padding:4px 7px;background:#fff1c7;color:#8a6500;white-space:nowrap}.purchase-status.done{background:#dcf5e5;color:#18733d}
+.purchase-meta{font-size:10px;color:#777;margin-top:6px;line-height:1.5}.purchase-items{font-size:10px;color:#555;margin-top:6px;padding-top:6px;border-top:1px solid #f0f1f2}
+.purchase-actions{display:flex;gap:6px;margin-top:9px}.purchase-actions button{flex:1;border:1px solid #dfe3e7;background:#fff;border-radius:8px;padding:7px;font-size:10px}.purchase-actions .primary{background:var(--blue);border-color:var(--blue);color:#fff}
+.purchase-fab{position:fixed;right:18px;bottom:136px;border:0;border-radius:50%;width:48px;height:48px;font-size:23px;background:#18a66a;color:#fff;box-shadow:0 5px 18px #18a66a44;z-index:20}
+.item-row{display:grid;grid-template-columns:1fr 72px 86px 30px;gap:5px;margin-bottom:6px;align-items:center}.item-row input{padding:9px;font-size:11px}.item-row button{height:36px;border:1px solid #ddd;background:#fff;border-radius:8px;font-size:15px}
+.total-box{background:#f5f8fb;border-radius:9px;padding:10px;text-align:right;font-size:12px;font-weight:700;margin-top:8px}
+.photo-box{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}.photo-thumb{position:relative;border-radius:9px;overflow:hidden;border:1px solid #ddd;aspect-ratio:1}.photo-thumb img{width:100%;height:100%;object-fit:cover}.photo-remove{position:absolute;right:4px;top:4px;width:23px;height:23px;border:0;border-radius:50%;background:#0008;color:#fff}
+.purchase-detail-head{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}.purchase-detail-title{font-size:18px;font-weight:750}.detail-section{margin-top:16px}.detail-section h3{font-size:13px;margin:0 0 7px}.detail-info{border:1px solid #e5e8ec;border-radius:10px;padding:10px;font-size:11px;line-height:1.8}.share-note{background:#fff8db;border:1px solid #f2dfa0;border-radius:9px;padding:9px;font-size:10px;color:#735b00;margin-top:9px}
+@media (min-width:900px){.purchase-fab{right:45px}.purchase-summary{max-width:520px}.purchase-card{padding:14px}}
+
 </style>
 </head>
 <body>
@@ -101,6 +121,24 @@ textarea{min-height:80px;resize:vertical}.form-actions{display:flex;gap:8px;marg
   <button data-filter="done">완료 <span class="chip-count" id="doneCount">0</span></button>
 </nav>
 <main id="list"></main>
+
+<div id="purchaseView" style="display:none">
+  <div class="purchase-home">
+    <div class="purchase-summary">
+      <div class="purchase-stat"><strong id="purchaseAllCount">0</strong><span>전체</span></div>
+      <div class="purchase-stat"><strong id="purchasePendingCount">0</strong><span>입고 대기</span></div>
+      <div class="purchase-stat"><strong id="purchaseDoneCount">0</strong><span>입고 완료</span></div>
+    </div>
+    <div class="purchase-filter">
+      <button class="active" data-pfilter="all">전체</button>
+      <button data-pfilter="pending">입고 대기</button>
+      <button data-pfilter="done">입고 완료</button>
+    </div>
+    <input class="purchase-search" id="purchaseSearch" placeholder="품목명, 구매처, 담당자 검색...">
+    <div id="purchaseList"></div>
+  </div>
+</div>
+
 <div id="calendarView" style="display:none"></div>
 <div style="padding:0 16px 18px;color:#777;font-size:12px;text-align:center">
 ① 예정 → ② 진행 중 → ③ 완료
@@ -108,6 +146,7 @@ textarea{min-height:80px;resize:vertical}.form-actions{display:flex;gap:8px;marg
 <button class="fab" id="addBtn" aria-label="할 일 추가">＋</button>
 <nav class="bottom-nav" id="bottomNav">
   <button class="bottom-item active" data-nav="today"><span class="nav-icon">⌂</span><span>오늘</span></button>
+  <button class="bottom-item" data-nav="purchase"><span class="nav-icon">🛒</span><span>구매관리</span></button>
   <button class="bottom-item" data-nav="calendar"><span class="nav-icon">□</span><span>달력</span></button>
   <button class="bottom-item" data-nav="done"><span class="nav-icon">✓</span><span>완료</span></button>
   <button class="bottom-item" data-nav="all"><span class="nav-icon">☰</span><span>전체</span></button>
@@ -131,9 +170,60 @@ textarea{min-height:80px;resize:vertical}.form-actions{display:flex;gap:8px;marg
 </dialog>
 
 
+
+<button class="purchase-fab" id="purchaseAddBtn" style="display:none" aria-label="구매요청 등록">＋</button>
+
+<dialog id="purchaseDlg">
+<form id="purchaseForm">
+<h2 id="purchaseDialogTitle">구매요청 등록</h2>
+<input type="hidden" id="purchaseId">
+<label>구매요청 제목</label><input id="purchaseTitle" required placeholder="예: 생산기술팀 공구 구매">
+<label>구매처</label><input id="purchaseVendor" placeholder="예: 온라인 / 업체명">
+<label>구매 담당자</label><input id="purchaseManager" placeholder="카톡으로 공유할 담당자 이름">
+<label>요청일</label><input id="purchaseDate" type="date" required>
+<label>구매 품목</label>
+<div id="purchaseItems"></div>
+<button type="button" class="calendar-add" id="addPurchaseItemBtn">＋ 품목 추가</button>
+<div class="total-box">총 금액 <span id="purchaseTotal">0</span>원</div>
+<label>메모</label><textarea id="purchaseMemo" placeholder="구매요청 관련 메모"></textarea>
+<div class="form-actions"><button type="button" class="cancel" id="purchaseCancelBtn">취소</button><button class="save">등록하기</button></div>
+</form>
+</dialog>
+
+<dialog id="receiptDlg">
+<form id="receiptForm">
+<h2>입고 처리</h2>
+<input type="hidden" id="receiptId">
+<label>입고일</label><input id="receiptDate" type="date" required>
+<label>입고 수량</label><input id="receiptQty" type="number" min="0" step="1" placeholder="입고된 수량">
+<label>입고 사진</label>
+<input id="receiptPhoto" type="file" accept="image/*" capture="environment" multiple>
+<div id="receiptPreview" class="photo-box"></div>
+<label>입고 메모</label><textarea id="receiptMemo" placeholder="정상 입고 확인 등"></textarea>
+<div class="form-actions"><button type="button" class="cancel" id="receiptCancelBtn">취소</button><button class="save">입고 완료</button></div>
+</form>
+</dialog>
+
+<dialog id="purchaseDetailDlg">
+<div style="padding:20px">
+<div class="purchase-detail-head"><div><div class="purchase-detail-title" id="detailTitle"></div><div class="meta" id="detailStatus"></div></div><button type="button" class="cancel" id="detailCloseBtn" style="padding:7px 10px;border:0;border-radius:8px">닫기</button></div>
+<div class="detail-section"><h3>구매 정보</h3><div class="detail-info" id="detailInfo"></div></div>
+<div class="detail-section"><h3>품목</h3><div class="detail-info" id="detailItems"></div></div>
+<div class="detail-section" id="detailPhotoSection" style="display:none"><h3>입고 사진</h3><div class="photo-box" id="detailPhotos"></div></div>
+<div class="share-note">입고 완료 후 <b>카톡 공유</b>를 누르면 휴대폰의 공유 화면에서 카카오톡을 선택해 사진과 내용을 보낼 수 있습니다.</div>
+<div class="purchase-actions"><button type="button" id="detailEditBtn">수정</button><button type="button" class="primary" id="detailReceiptBtn">입고 처리</button><button type="button" id="detailShareBtn">카톡 공유</button></div>
+</div>
+</dialog>
+
 <script>
 const KEY="myTodoTasksV1";
 let tasks=JSON.parse(localStorage.getItem(KEY)||"[]");
+const PURCHASE_KEY="myPurchasesV1";
+let purchases=JSON.parse(localStorage.getItem(PURCHASE_KEY)||"[]");
+let purchaseFilter="all";
+let purchaseSearch="";
+let receiptPhotos=[];
+let currentPurchaseId="";
 let filter="today";
 let calendarDate=new Date();
 let selectedDate=today();
@@ -163,6 +253,10 @@ function updateCounts(){
 function render(){
  updateCounts();
  const d=new Date();
+ const isPurchase=filter==="purchase";
+ $("purchaseView").style.display=isPurchase?"block":"none";
+ $("purchaseAddBtn").style.display=isPurchase?"block":"none";
+ if(isPurchase){$("list").style.display="none";$("calendarView").style.display="none";renderPurchases();return}
  $("todayText").textContent=d.toLocaleDateString("ko-KR",{year:"numeric",month:"long",day:"numeric",weekday:"long"});
  const cal=filter==="calendar";
  $("list").style.display=cal?"none":"block";
@@ -205,6 +299,81 @@ function render(){
    </div>`;
   $("list").appendChild(card);
  });
+}
+
+
+function savePurchases(){localStorage.setItem(PURCHASE_KEY,JSON.stringify(purchases));renderPurchases()}
+function money(v){return Number(v||0).toLocaleString("ko-KR")}
+function purchaseStatusText(s){return s==="done"?"입고 완료":"입고 대기"}
+function purchaseFiltered(){
+ let arr=purchases.filter(x=>purchaseFilter==="all"||x.status===purchaseFilter);
+ const q=purchaseSearch.trim().toLowerCase();
+ if(q)arr=arr.filter(x=>(x.title+" "+x.vendor+" "+x.manager+" "+x.items.map(i=>i.name).join(" ")).toLowerCase().includes(q));
+ return arr.sort((a,b)=>(Number(b.updatedAt)||0)-(Number(a.updatedAt)||0));
+}
+function renderPurchases(){
+ $("purchaseAllCount").textContent=purchases.length;
+ $("purchasePendingCount").textContent=purchases.filter(x=>x.status!=="done").length;
+ $("purchaseDoneCount").textContent=purchases.filter(x=>x.status==="done").length;
+ document.querySelectorAll("[data-pfilter]").forEach(b=>b.classList.toggle("active",b.dataset.pfilter===purchaseFilter));
+ const arr=purchaseFiltered(); const box=$("purchaseList"); box.innerHTML="";
+ if(!arr.length){box.innerHTML='<div class="empty">등록된 구매요청이 없습니다.<br>＋ 버튼으로 구매요청을 등록해보세요.</div>';return}
+ arr.forEach(x=>{
+  const items=x.items||[];
+  const itemText=items.map(i=>`${esc(i.name)} ${i.qty?esc(i.qty):""}${i.unit?esc(i.unit):""}`).join(" · ");
+  const card=document.createElement("div");card.className="purchase-card "+(x.status==="done"?"done":"pending");
+  card.innerHTML=`<div class="purchase-card-top"><div class="purchase-title">${esc(x.title)}</div><span class="purchase-status ${x.status}">${purchaseStatusText(x.status)}</span></div>
+   <div class="purchase-meta">요청일 ${esc(x.requestDate)} · ${esc(x.vendor||"구매처 미입력")} · 담당자 ${esc(x.manager||"미지정")}</div>
+   <div class="purchase-items">${itemText||"품목 없음"} · 총 ${money(items.reduce((s,i)=>s+(Number(i.amount)||0),0))}원</div>
+   <div class="purchase-actions"><button data-pdetail="${x.id}">상세</button>${x.status!=="done"?`<button class="primary" data-preceipt="${x.id}">📷 입고 처리</button>`:`<button data-pshare="${x.id}">💬 카톡 공유</button>`}</div>`;
+  box.appendChild(card);
+ });
+}
+function addPurchaseItemRow(item={name:"",qty:"",unit:"EA",amount:""}){
+ const wrap=$("purchaseItems"); const row=document.createElement("div");row.className="item-row";
+ row.innerHTML=`<input class="pi-name" placeholder="품목명" value="${esc(item.name)}"><input class="pi-qty" type="number" min="0" step="1" placeholder="수량" value="${esc(item.qty)}"><input class="pi-amount" type="number" min="0" step="1" placeholder="금액" value="${esc(item.amount)}"><button type="button" class="pi-del">×</button>`;
+ wrap.appendChild(row);
+ row.querySelectorAll("input").forEach(i=>i.addEventListener("input",updatePurchaseTotal));
+ row.querySelector(".pi-del").onclick=()=>{row.remove();updatePurchaseTotal()};
+ updatePurchaseTotal();
+}
+function updatePurchaseTotal(){
+ const total=[...document.querySelectorAll(".pi-amount")].reduce((s,i)=>s+(Number(i.value)||0),0);$("purchaseTotal").textContent=money(total)
+}
+function openPurchaseAdd(){
+ $("purchaseDialogTitle").textContent="구매요청 등록";$("purchaseId").value="";$("purchaseTitle").value="";$("purchaseVendor").value="";$("purchaseManager").value="";$("purchaseDate").value=today();$("purchaseMemo").value="";$("purchaseItems").innerHTML="";addPurchaseItemRow();$("purchaseDlg").showModal();
+}
+function openPurchaseEdit(id){
+ const x=purchases.find(p=>p.id===id);if(!x)return;
+ $("purchaseDialogTitle").textContent="구매요청 수정";$("purchaseId").value=x.id;$("purchaseTitle").value=x.title;$("purchaseVendor").value=x.vendor||"";$("purchaseManager").value=x.manager||"";$("purchaseDate").value=x.requestDate;$("purchaseMemo").value=x.memo||"";$("purchaseItems").innerHTML="";(x.items||[]).forEach(i=>addPurchaseItemRow(i));if(!(x.items||[]).length)addPurchaseItemRow();$("purchaseDlg").showModal();
+}
+function openReceipt(id){
+ const x=purchases.find(p=>p.id===id);if(!x)return;currentPurchaseId=id;receiptPhotos=[];$("receiptId").value=id;$("receiptDate").value=today();$("receiptQty").value=(x.items||[]).reduce((s,i)=>s+(Number(i.qty)||0),0);$("receiptMemo").value="";$("receiptPhoto").value="";$("receiptPreview").innerHTML="";$("receiptDlg").showModal();
+}
+function readPhotos(files){return Promise.all([...files].map(file=>new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve({name:file.name,type:file.type,data:r.result});r.onerror=reject;r.readAsDataURL(file)})))}
+function showReceiptPreview(){const box=$("receiptPreview");box.innerHTML="";receiptPhotos.forEach((p,i)=>{const d=document.createElement("div");d.className="photo-thumb";d.innerHTML=`<img src="${p.data}"><button type="button" class="photo-remove">×</button>`;d.querySelector("button").onclick=()=>{receiptPhotos.splice(i,1);showReceiptPreview()};box.appendChild(d)})}
+async function completeReceipt(id){
+ const x=purchases.find(p=>p.id===id);if(!x)return;
+ x.status="done";x.receiptDate=$("receiptDate").value;x.receiptQty=$("receiptQty").value;x.receiptMemo=$("receiptMemo").value.trim();x.photos=receiptPhotos;x.updatedAt=Date.now();savePurchases();$("receiptDlg").close();openPurchaseDetail(id);
+}
+function openPurchaseDetail(id){
+ const x=purchases.find(p=>p.id===id);if(!x)return;currentPurchaseId=id;
+ $("detailTitle").textContent=x.title;$("detailStatus").textContent=purchaseStatusText(x.status);
+ $("detailInfo").innerHTML=`요청일 : ${esc(x.requestDate)}<br>구매처 : ${esc(x.vendor||"-")}<br>담당자 : ${esc(x.manager||"-")}<br>총 금액 : ${money((x.items||[]).reduce((s,i)=>s+(Number(i.amount)||0),0))}원${x.status==="done"?`<br>입고일 : ${esc(x.receiptDate||"-")}<br>입고수량 : ${esc(x.receiptQty||"-")}`:""}${x.memo?`<br>메모 : ${esc(x.memo)}`:""}`;
+ $("detailItems").innerHTML=(x.items||[]).map(i=>`${esc(i.name)} / ${esc(i.qty)}${esc(i.unit||"EA")} / ${money(i.amount)}원`).join("<br>")||"-";
+ const photos=x.photos||[];$("detailPhotoSection").style.display=photos.length?"block":"none";$("detailPhotos").innerHTML=photos.map(p=>`<div class="photo-thumb"><img src="${p.data}"></div>`).join("");
+ $("detailReceiptBtn").style.display=x.status==="done"?"none":"block";$("detailShareBtn").style.display=x.status==="done"?"block":"none";$("purchaseDetailDlg").showModal();
+}
+async function sharePurchase(id){
+ const x=purchases.find(p=>p.id===id);if(!x)return;
+ const photos=x.photos||[];const text=`[구매품 입고 완료]\n품목 : ${(x.items||[]).map(i=>i.name).join(", ")}\n수량 : ${x.receiptQty||"-"}\n입고일 : ${x.receiptDate||"-"}\n담당자 : ${x.manager||"-"}\n입고 확인 사진입니다.`;
+ try{
+  if(navigator.share){
+   const files=[];for(let i=0;i<photos.length;i++){const p=photos[i];const blob=await (await fetch(p.data)).blob();files.push(new File([blob],p.name||`입고사진${i+1}.jpg`,{type:p.type||blob.type||"image/jpeg"}))}
+   const data=files.length?{title:"구매품 입고 완료",text,files}:{title:"구매품 입고 완료",text};
+   if(!files.length||!navigator.canShare||navigator.canShare({files}))await navigator.share(data);else await navigator.share({title:"구매품 입고 완료",text});
+  }else{await navigator.clipboard?.writeText(text);alert("카카오톡 공유는 휴대폰에서 사용하는 것을 권장합니다. 내용이 클립보드에 복사되었습니다.")}
+ }catch(e){if(e.name!=="AbortError")alert("공유를 취소했거나 현재 기기에서 공유를 지원하지 않습니다.")}
 }
 
 function renderCalendar(){
@@ -319,7 +488,27 @@ function exportToExcel(){
   const sorted=[...tasks].sort((a,b)=>(a.date||"").localeCompare(b.date||"")||(a.time||"").localeCompare(b.time||""));
   const escExcel=v=>String(v??"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
   const rows=sorted.map((x,i)=>`<tr><td>${i+1}</td><td>${escExcel(x.date)}</td><td>${escExcel(x.time||"")}</td><td>${escExcel(x.title)}</td><td>${escExcel(statusName[x.status]||"")}</td><td>${escExcel(priorityName[x.priority]||"")}</td><td>${escExcel(x.memo||"")}</td></tr>`).join("");
-  const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"><style>table{border-collapse:collapse;font-family:"Malgun Gothic",Arial,sans-serif}th,td{border:1px solid #999;padding:7px 10px}th{font-weight:bold;background:#eaf3ff}</style></head><body><table><tr><th>번호</th><th>날짜</th><th>시간</th><th>할 일</th><th>상태</th><th>중요도</th><th>메모</th></tr>${rows}</table></body></html>`;
+  const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"><style>table{border-collapse:collapse;font-family:"Malgun Gothic",Arial,sans-serif}th,td{border:1px solid #999;padding:7px 10px}th{font-weight:bold;background:#eaf3ff}
+/* 구매관리 */
+.purchase-home{padding:0 0 20px}
+.purchase-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-bottom:12px}
+.purchase-stat{border:1px solid #e5e8ec;border-radius:10px;padding:9px 7px;text-align:center;background:#fff}
+.purchase-stat strong{display:block;font-size:17px}.purchase-stat span{font-size:9px;color:#777}
+.purchase-filter{display:flex;gap:6px;margin-bottom:10px;overflow:auto}.purchase-filter button{border:0;background:#f2f4f7;border-radius:17px;padding:7px 11px;font-size:10px;white-space:nowrap}.purchase-filter button.active{background:var(--blue);color:#fff}
+.purchase-search{width:100%;height:38px;border:1px solid #e1e5ea;border-radius:9px;padding:0 11px;font-size:11px;margin-bottom:10px}
+.purchase-card{border:1px solid #e2e6ea;border-radius:11px;padding:11px;margin-bottom:8px;background:#fff;box-shadow:0 1px 2px #00000008;cursor:pointer}
+.purchase-card.pending{border-color:#f0d58a}.purchase-card.done{border-color:#b9dfc7;background:#fcfffd}
+.purchase-card-top{display:flex;align-items:flex-start;gap:7px}.purchase-title{font-weight:700;font-size:13px;flex:1}.purchase-status{font-size:9px;border-radius:10px;padding:4px 7px;background:#fff1c7;color:#8a6500;white-space:nowrap}.purchase-status.done{background:#dcf5e5;color:#18733d}
+.purchase-meta{font-size:10px;color:#777;margin-top:6px;line-height:1.5}.purchase-items{font-size:10px;color:#555;margin-top:6px;padding-top:6px;border-top:1px solid #f0f1f2}
+.purchase-actions{display:flex;gap:6px;margin-top:9px}.purchase-actions button{flex:1;border:1px solid #dfe3e7;background:#fff;border-radius:8px;padding:7px;font-size:10px}.purchase-actions .primary{background:var(--blue);border-color:var(--blue);color:#fff}
+.purchase-fab{position:fixed;right:18px;bottom:136px;border:0;border-radius:50%;width:48px;height:48px;font-size:23px;background:#18a66a;color:#fff;box-shadow:0 5px 18px #18a66a44;z-index:20}
+.item-row{display:grid;grid-template-columns:1fr 72px 86px 30px;gap:5px;margin-bottom:6px;align-items:center}.item-row input{padding:9px;font-size:11px}.item-row button{height:36px;border:1px solid #ddd;background:#fff;border-radius:8px;font-size:15px}
+.total-box{background:#f5f8fb;border-radius:9px;padding:10px;text-align:right;font-size:12px;font-weight:700;margin-top:8px}
+.photo-box{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}.photo-thumb{position:relative;border-radius:9px;overflow:hidden;border:1px solid #ddd;aspect-ratio:1}.photo-thumb img{width:100%;height:100%;object-fit:cover}.photo-remove{position:absolute;right:4px;top:4px;width:23px;height:23px;border:0;border-radius:50%;background:#0008;color:#fff}
+.purchase-detail-head{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}.purchase-detail-title{font-size:18px;font-weight:750}.detail-section{margin-top:16px}.detail-section h3{font-size:13px;margin:0 0 7px}.detail-info{border:1px solid #e5e8ec;border-radius:10px;padding:10px;font-size:11px;line-height:1.8}.share-note{background:#fff8db;border:1px solid #f2dfa0;border-radius:9px;padding:9px;font-size:10px;color:#735b00;margin-top:9px}
+@media (min-width:900px){.purchase-fab{right:45px}.purchase-summary{max-width:520px}.purchase-card{padding:14px}}
+
+</style></head><body><table><tr><th>번호</th><th>날짜</th><th>시간</th><th>할 일</th><th>상태</th><th>중요도</th><th>메모</th></tr>${rows}</table></body></html>`;
   const blob=new Blob(["\ufeff",html],{type:"application/vnd.ms-excel;charset=utf-8"});
   const url=URL.createObjectURL(blob);
   const a=document.createElement("a");
@@ -372,7 +561,9 @@ document.querySelectorAll(".bottom-item").forEach(btn=>{
     const nav=btn.dataset.nav;
     document.querySelectorAll(".bottom-item").forEach(b=>b.classList.remove("active"));
     btn.classList.add("active");
-    if(nav==="calendar"){
+    if(nav==="purchase"){
+      filter="purchase";
+    }else if(nav==="calendar"){
       filter="calendar";
     }else{
       filter=nav;
@@ -382,6 +573,37 @@ document.querySelectorAll(".bottom-item").forEach(btn=>{
     window.scrollTo({top:0,behavior:"smooth"});
   };
 });
+
+$("purchaseAddBtn").onclick=openPurchaseAdd;
+$("purchaseCancelBtn").onclick=()=>$("purchaseDlg").close();
+$("receiptCancelBtn").onclick=()=>$("receiptDlg").close();
+$("detailCloseBtn").onclick=()=>$("purchaseDetailDlg").close();
+$("addPurchaseItemBtn").onclick=()=>addPurchaseItemRow();
+$("purchaseSearch").addEventListener("input",e=>{purchaseSearch=e.target.value;renderPurchases()});
+document.getElementById("purchaseView").addEventListener("click",e=>{
+ const b=e.target.closest("button");if(!b)return;
+ if(b.dataset.pfilter){purchaseFilter=b.dataset.pfilter;renderPurchases();return}
+ if(b.dataset.pdetail){openPurchaseDetail(b.dataset.pdetail);return}
+ if(b.dataset.preceipt){openReceipt(b.dataset.preceipt);return}
+ if(b.dataset.pshare){sharePurchase(b.dataset.pshare);return}
+});
+$("purchaseForm").addEventListener("submit",e=>{
+ e.preventDefault();
+ const rows=[...document.querySelectorAll("#purchaseItems .item-row")];
+ const items=rows.map(r=>({name:r.querySelector(".pi-name").value.trim(),qty:r.querySelector(".pi-qty").value,unit:"EA",amount:r.querySelector(".pi-amount").value})).filter(i=>i.name);
+ if(!items.length){alert("구매 품목을 1개 이상 입력해주세요.");return}
+ const id=$("purchaseId").value||crypto.randomUUID();const old=purchases.find(p=>p.id===id);
+ const obj={id,title:$("purchaseTitle").value.trim(),vendor:$("purchaseVendor").value.trim(),manager:$("purchaseManager").value.trim(),requestDate:$("purchaseDate").value,items,memo:$("purchaseMemo").value.trim(),status:old?.status||"pending",receiptDate:old?.receiptDate||"",receiptQty:old?.receiptQty||"",receiptMemo:old?.receiptMemo||"",photos:old?.photos||[],updatedAt:Date.now()};
+ if(!obj.title){alert("구매요청 제목을 입력해주세요.");return}
+ const idx=purchases.findIndex(p=>p.id===id);if(idx>=0)purchases[idx]=obj;else purchases.push(obj);
+ $("purchaseDlg").close();savePurchases();
+});
+$("receiptPhoto").addEventListener("change",async e=>{const incoming=await readPhotos(e.target.files);receiptPhotos=receiptPhotos.concat(incoming).slice(0,6);showReceiptPreview();e.target.value=""});
+$("receiptForm").addEventListener("submit",async e=>{e.preventDefault();await completeReceipt($("receiptId").value)});
+$("detailEditBtn").onclick=()=>{const id=currentPurchaseId;$("purchaseDetailDlg").close();openPurchaseEdit(id)};
+$("detailReceiptBtn").onclick=()=>{const id=currentPurchaseId;$("purchaseDetailDlg").close();openReceipt(id)};
+$("detailShareBtn").onclick=()=>sharePurchase(currentPurchaseId);
+
 $("settingsBtn").onclick=()=>alert("설정 기능은 다음 단계에서 추가할 수 있습니다.");
 
 $("addBtn").onclick=()=>openAdd(filter==="calendar"?selectedDate:today());
