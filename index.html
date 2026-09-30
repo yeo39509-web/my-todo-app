@@ -170,10 +170,14 @@ function render(){
  if(cal){renderCalendar();return}
 
  const arr=visible().sort((a,b)=>{
+  // 완료: 실제 완료 처리 시각이 최신인 일정부터
   if(filter==="done"){
     return (Number(b.updatedAt)||0)-(Number(a.updatedAt)||0);
   }
-  return (a.date+a.time).localeCompare(b.date+b.time);
+  // 전체 / 오늘 / 진행 중: 일정 날짜와 시간이 최신인 것부터
+  const ad=(a.date||"0000-00-00")+" "+(a.time||"00:00");
+  const bd=(b.date||"0000-00-00")+" "+(b.time||"00:00");
+  return bd.localeCompare(ad);
  });
  $("list").innerHTML="";
  if(!arr.length){$("list").innerHTML='<div class="empty">표시할 일이 없습니다.<br>＋ 버튼으로 할 일을 추가해보세요.</div>';return}
