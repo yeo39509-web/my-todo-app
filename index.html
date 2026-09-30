@@ -169,7 +169,12 @@ function render(){
  $("calendarView").style.display=cal?"block":"none";
  if(cal){renderCalendar();return}
 
- const arr=visible().sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time));
+ const arr=visible().sort((a,b)=>{
+  if(filter==="done"){
+    return (Number(b.updatedAt)||0)-(Number(a.updatedAt)||0);
+  }
+  return (a.date+a.time).localeCompare(b.date+b.time);
+ });
  $("list").innerHTML="";
  if(!arr.length){$("list").innerHTML='<div class="empty">표시할 일이 없습니다.<br>＋ 버튼으로 할 일을 추가해보세요.</div>';return}
  arr.forEach(x=>{
@@ -185,7 +190,7 @@ function render(){
       <span class="badge">${fmtDate(x.date)}${x.time?" "+x.time:""}</span>
       <span class="badge">${priorityText(x.priority)}</span>
       <span class="badge">${x.status==="doing"?"② 진행 중":x.status==="done"?"③ 완료":"① 예정"}</span>
-      ${overdue?'<span class="badge">기한 지남</span>':""}
+      ${overdue?'<span class="badge">처리 진행 중</span>':""}
      </div>
      ${x.memo?`<div class="meta">${esc(x.memo)}</div>`:""}
      <div class="actions">
@@ -284,12 +289,13 @@ $("list").addEventListener("click",e=>{
   const x=tasks.find(t=>t.id===next);
   if(x){
    x.status=x.status==="todo"?"doing":x.status==="doing"?"done":"todo";
+   x.updatedAt=Date.now();
    save();
   }
  }
 });
 $("list").addEventListener("change",e=>{
- if(e.target.dataset.check){const x=tasks.find(t=>t.id===e.target.dataset.check);if(x){x.status=e.target.checked?"done":"todo";save()}}
+ if(e.target.dataset.check){const x=tasks.find(t=>t.id===e.target.dataset.check);if(x){x.status=e.target.checked?"done":"todo";x.updatedAt=Date.now();save()}}
 });
 document.querySelector(".tabs").addEventListener("click",e=>{
  const btn=e.target.closest("button[data-filter]");
