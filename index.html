@@ -84,6 +84,9 @@ textarea{min-height:80px;resize:vertical}.form-actions{display:flex;gap:8px;marg
 
 
 /* 구매관리 */
+.purchase-quick-add{background:#f7fbff;border-bottom:1px solid var(--line)}
+.purchase-quick-add input{border-color:#cfe1f5;background:#fff}
+.purchase-quick-add button{background:#18a66a}
 .purchase-home{padding:0 0 20px}
 .purchase-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-bottom:12px}
 .purchase-stat{border:1px solid #e5e8ec;border-radius:10px;padding:9px 7px;text-align:center;background:#fff}
@@ -110,11 +113,15 @@ textarea{min-height:80px;resize:vertical}.form-actions{display:flex;gap:8px;marg
   <div class="brand-row"><div class="brand-icon">✓</div><h1>스케줄</h1><button class="excel-btn" id="excelBtn" aria-label="엑셀로 저장">⇩<span>엑셀</span></button><button class="settings-btn" id="settingsBtn" aria-label="설정">⚙</button></div>
   <div class="date" id="todayText"></div>
 </header>
-<div class="quick-add">
+<div class="quick-add" id="scheduleQuickAdd">
   <input id="quickTitle" type="text" placeholder="할 일을 입력하세요..." autocomplete="off">
   <button id="quickAddBtn">추가</button>
 </div>
-<nav class="tabs">
+<div class="quick-add purchase-quick-add" id="purchaseQuickAdd" style="display:none">
+  <input id="quickPurchaseTitle" type="text" placeholder="구매할 품목을 입력하세요... (Enter)" autocomplete="off">
+  <button id="quickPurchaseAddBtn">추가</button>
+</div>
+<nav class="tabs" id="scheduleTabs">
   <button data-filter="all">전체 <span class="chip-count" id="allCount">0</span></button>
   <button data-filter="today" class="active">오늘 <span class="chip-count" id="todayCount">0</span></button>
   <button data-filter="doing">진행 중 <span class="chip-count" id="doingCount">0</span></button>
@@ -256,6 +263,9 @@ function render(){
  const isPurchase=filter==="purchase";
  $("purchaseView").style.display=isPurchase?"block":"none";
  $("purchaseAddBtn").style.display=isPurchase?"block":"none";
+ $("scheduleQuickAdd").style.display=isPurchase?"none":"flex";
+ $("purchaseQuickAdd").style.display=isPurchase?"flex":"none";
+ $("scheduleTabs").style.display=isPurchase?"none":"flex";
  if(isPurchase){$("list").style.display="none";$("calendarView").style.display="none";renderPurchases();return}
  $("todayText").textContent=d.toLocaleDateString("ko-KR",{year:"numeric",month:"long",day:"numeric",weekday:"long"});
  const cal=filter==="calendar";
@@ -323,8 +333,9 @@ function renderPurchases(){
   const itemText=items.map(i=>`${esc(i.name)} ${i.qty?esc(i.qty):""}${i.unit?esc(i.unit):""}`).join(" · ");
   const card=document.createElement("div");card.className="purchase-card "+(x.status==="done"?"done":"pending");
   card.innerHTML=`<div class="purchase-card-top"><div class="purchase-title">${esc(x.title)}</div><span class="purchase-status ${x.status}">${purchaseStatusText(x.status)}</span></div>
-   <div class="purchase-meta">요청일 ${esc(x.requestDate)} · ${esc(x.vendor||"구매처 미입력")} · 담당자 ${esc(x.manager||"미지정")}</div>
-   <div class="purchase-items">${itemText||"품목 없음"} · 총 ${money(items.reduce((s,i)=>s+(Number(i.amount)||0),0))}원</div>
+   <div class="purchase-meta">구매일 ${esc(x.requestDate)} · 구매처 ${esc(x.vendor||"미입력")} · 담당자 ${esc(x.manager||"미지정")}</div>
+   <div class="purchase-items"><b>구매 품목</b> : ${itemText||"품목 없음"} · <b>총 금액</b> : ${money(items.reduce((s,i)=>s+(Number(i.amount)||0),0))}원</div>
+   ${x.status==="done"?`<div class="purchase-meta">입고일 ${esc(x.receiptDate||"-")} · 입고수량 ${esc(x.receiptQty||"-")} · 사진 ${(x.photos||[]).length}장</div>`:""}
    <div class="purchase-actions"><button data-pdetail="${x.id}">상세</button>${x.status!=="done"?`<button class="primary" data-preceipt="${x.id}">📷 입고 처리</button>`:`<button data-pshare="${x.id}">💬 카톡 공유</button>`}</div>`;
   box.appendChild(card);
  });
@@ -340,6 +351,31 @@ function addPurchaseItemRow(item={name:"",qty:"",unit:"EA",amount:""}){
 function updatePurchaseTotal(){
  const total=[...document.querySelectorAll(".pi-amount")].reduce((s,i)=>s+(Number(i.value)||0),0);$("purchaseTotal").textContent=money(total)
 }
+function createQuickPurchase(openEditAfter=true){
+ const input=$("quickPurchaseTitle");
+ const title=input.value.trim();
+ if(!title){input.focus();return}
+ const id=crypto.randomUUID();
+ purchases.push({
+  id:id,
+  title:title,
+  vendor:"",
+  manager:"",
+  requestDate:today(),
+  items:[{name:title,qty:"",unit:"EA",amount:""}],
+  memo:"",
+  status:"pending",
+  receiptDate:"",
+  receiptQty:"",
+  receiptMemo:"",
+  photos:[],
+  updatedAt:Date.now()
+ });
+ input.value="";
+ savePurchases();
+ if(openEditAfter){openPurchaseEdit(id)}else{input.focus()}
+}
+
 function openPurchaseAdd(){
  $("purchaseDialogTitle").textContent="구매요청 등록";$("purchaseId").value="";$("purchaseTitle").value="";$("purchaseVendor").value="";$("purchaseManager").value="";$("purchaseDate").value=today();$("purchaseMemo").value="";$("purchaseItems").innerHTML="";addPurchaseItemRow();$("purchaseDlg").showModal();
 }
@@ -490,6 +526,9 @@ function exportToExcel(){
   const rows=sorted.map((x,i)=>`<tr><td>${i+1}</td><td>${escExcel(x.date)}</td><td>${escExcel(x.time||"")}</td><td>${escExcel(x.title)}</td><td>${escExcel(statusName[x.status]||"")}</td><td>${escExcel(priorityName[x.priority]||"")}</td><td>${escExcel(x.memo||"")}</td></tr>`).join("");
   const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"><style>table{border-collapse:collapse;font-family:"Malgun Gothic",Arial,sans-serif}th,td{border:1px solid #999;padding:7px 10px}th{font-weight:bold;background:#eaf3ff}
 /* 구매관리 */
+.purchase-quick-add{background:#f7fbff;border-bottom:1px solid var(--line)}
+.purchase-quick-add input{border-color:#cfe1f5;background:#fff}
+.purchase-quick-add button{background:#18a66a}
 .purchase-home{padding:0 0 20px}
 .purchase-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-bottom:12px}
 .purchase-stat{border:1px solid #e5e8ec;border-radius:10px;padding:9px 7px;text-align:center;background:#fff}
@@ -553,6 +592,14 @@ $("quickTitle").addEventListener("keydown",e=>{
   if(e.key==="Enter"){
     e.preventDefault();
     createQuickTask(true);
+  }
+});
+
+$("quickPurchaseAddBtn").onclick=()=>createQuickPurchase(true);
+$("quickPurchaseTitle").addEventListener("keydown",e=>{
+  if(e.key==="Enter"){
+    e.preventDefault();
+    createQuickPurchase(true);
   }
 });
 
