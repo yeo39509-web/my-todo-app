@@ -110,7 +110,7 @@ textarea{min-height:80px;resize:vertical}.form-actions{display:flex;gap:8px;marg
 <body>
 <div class="app">
 <header>
-  <div class="brand-row"><div class="brand-icon">✓</div><h1>스케줄</h1><button class="excel-btn" id="excelBtn" aria-label="엑셀로 저장">⇩<span>엑셀</span></button><button class="settings-btn" id="settingsBtn" aria-label="설정">⚙</button></div>
+  <div class="brand-row"><div class="brand-icon" id="brandIcon">✓</div><h1 id="pageTitle">스케줄</h1><button class="excel-btn" id="excelBtn" aria-label="엑셀로 저장">⇩<span>엑셀</span></button><button class="settings-btn" id="settingsBtn" aria-label="설정">⚙</button></div>
   <div class="date" id="todayText"></div>
 </header>
 <div class="quick-add" id="scheduleQuickAdd">
@@ -152,7 +152,7 @@ textarea{min-height:80px;resize:vertical}.form-actions{display:flex;gap:8px;marg
 </div>
 <button class="fab" id="addBtn" aria-label="할 일 추가">＋</button>
 <nav class="bottom-nav" id="bottomNav">
-  <button class="bottom-item active" data-nav="today"><span class="nav-icon">⌂</span><span>오늘</span></button>
+  <button class="bottom-item active" data-nav="today"><span class="nav-icon">▣</span><span>스케줄</span></button>
   <button class="bottom-item" data-nav="purchase"><span class="nav-icon">🛒</span><span>구매관리</span></button>
   <button class="bottom-item" data-nav="calendar"><span class="nav-icon">□</span><span>달력</span></button>
   <button class="bottom-item" data-nav="done"><span class="nav-icon">✓</span><span>완료</span></button>
@@ -193,7 +193,7 @@ textarea{min-height:80px;resize:vertical}.form-actions{display:flex;gap:8px;marg
 <button type="button" class="calendar-add" id="addPurchaseItemBtn">＋ 품목 추가</button>
 <div class="total-box">총 금액 <span id="purchaseTotal">0</span>원</div>
 <label>메모</label><textarea id="purchaseMemo" placeholder="구매요청 관련 메모"></textarea>
-<div class="form-actions"><button type="button" class="cancel" id="purchaseCancelBtn">취소</button><button class="save">등록하기</button></div>
+<div class="form-actions"><button type="button" class="cancel" id="purchaseCancelBtn">취소</button><button type="button" id="purchaseDeleteBtn" style="display:none;background:#fff;border:1px solid #e35b5b;color:#c62828">삭제</button><button class="save">등록하기</button></div>
 </form>
 </dialog>
 
@@ -218,7 +218,7 @@ textarea{min-height:80px;resize:vertical}.form-actions{display:flex;gap:8px;marg
 <div class="detail-section"><h3>품목</h3><div class="detail-info" id="detailItems"></div></div>
 <div class="detail-section" id="detailPhotoSection" style="display:none"><h3>입고 사진</h3><div class="photo-box" id="detailPhotos"></div></div>
 <div class="share-note">입고 완료 후 <b>카톡 공유</b>를 누르면 휴대폰의 공유 화면에서 카카오톡을 선택해 사진과 내용을 보낼 수 있습니다.</div>
-<div class="purchase-actions"><button type="button" id="detailEditBtn">수정</button><button type="button" class="primary" id="detailReceiptBtn">입고 처리</button><button type="button" id="detailShareBtn">카톡 공유</button></div>
+<div class="purchase-actions"><button type="button" id="detailEditBtn">수정</button><button type="button" class="primary" id="detailReceiptBtn">입고 처리</button><button type="button" id="detailShareBtn">카톡 공유</button><button type="button" id="detailDeleteBtn" style="border-color:#e35b5b;color:#c62828">삭제</button></div>
 </div>
 </dialog>
 
@@ -261,6 +261,9 @@ function render(){
  updateCounts();
  const d=new Date();
  const isPurchase=filter==="purchase";
+ // 화면별 상단 제목/아이콘
+ $("pageTitle").textContent=isPurchase?"구매등록":"스케줄";
+ $("brandIcon").textContent=isPurchase?"🛒":"✓";
  $("purchaseView").style.display=isPurchase?"block":"none";
  $("purchaseAddBtn").style.display=isPurchase?"block":"none";
  $("scheduleQuickAdd").style.display=isPurchase?"none":"flex";
@@ -377,11 +380,11 @@ function createQuickPurchase(openEditAfter=true){
 }
 
 function openPurchaseAdd(){
- $("purchaseDialogTitle").textContent="구매요청 등록";$("purchaseId").value="";$("purchaseTitle").value="";$("purchaseVendor").value="";$("purchaseManager").value="";$("purchaseDate").value=today();$("purchaseMemo").value="";$("purchaseItems").innerHTML="";addPurchaseItemRow();$("purchaseDlg").showModal();
+ $("purchaseDialogTitle").textContent="구매요청 등록";$("purchaseId").value="";$("purchaseTitle").value="";$("purchaseVendor").value="";$("purchaseManager").value="";$("purchaseDate").value=today();$("purchaseMemo").value="";$("purchaseItems").innerHTML="";$("purchaseDeleteBtn").style.display="none";addPurchaseItemRow();$("purchaseDlg").showModal();
 }
 function openPurchaseEdit(id){
  const x=purchases.find(p=>p.id===id);if(!x)return;
- $("purchaseDialogTitle").textContent="구매요청 수정";$("purchaseId").value=x.id;$("purchaseTitle").value=x.title;$("purchaseVendor").value=x.vendor||"";$("purchaseManager").value=x.manager||"";$("purchaseDate").value=x.requestDate;$("purchaseMemo").value=x.memo||"";$("purchaseItems").innerHTML="";(x.items||[]).forEach(i=>addPurchaseItemRow(i));if(!(x.items||[]).length)addPurchaseItemRow();$("purchaseDlg").showModal();
+ $("purchaseDialogTitle").textContent="구매요청 수정";$("purchaseId").value=x.id;$("purchaseTitle").value=x.title;$("purchaseVendor").value=x.vendor||"";$("purchaseManager").value=x.manager||"";$("purchaseDate").value=x.requestDate;$("purchaseMemo").value=x.memo||"";$("purchaseItems").innerHTML="";$("purchaseDeleteBtn").style.display="block";(x.items||[]).forEach(i=>addPurchaseItemRow(i));if(!(x.items||[]).length)addPurchaseItemRow();$("purchaseDlg").showModal();
 }
 function openReceipt(id){
  const x=purchases.find(p=>p.id===id);if(!x)return;currentPurchaseId=id;receiptPhotos=[];$("receiptId").value=id;$("receiptDate").value=today();$("receiptQty").value=(x.items||[]).reduce((s,i)=>s+(Number(i.qty)||0),0);$("receiptMemo").value="";$("receiptPhoto").value="";$("receiptPreview").innerHTML="";$("receiptDlg").showModal();
@@ -391,6 +394,14 @@ function showReceiptPreview(){const box=$("receiptPreview");box.innerHTML="";rec
 async function completeReceipt(id){
  const x=purchases.find(p=>p.id===id);if(!x)return;
  x.status="done";x.receiptDate=$("receiptDate").value;x.receiptQty=$("receiptQty").value;x.receiptMemo=$("receiptMemo").value.trim();x.photos=receiptPhotos;x.updatedAt=Date.now();savePurchases();$("receiptDlg").close();openPurchaseDetail(id);
+}
+function deletePurchase(id){
+ const x=purchases.find(p=>p.id===id);if(!x)return;
+ if(!confirm(`「${x.title}」 구매요청을 삭제할까요?\n삭제하면 구매정보와 입고사진도 함께 삭제됩니다.`))return;
+ purchases=purchases.filter(p=>p.id!==id);
+ $("purchaseDlg").close();
+ $("purchaseDetailDlg").close();
+ savePurchases();
 }
 function openPurchaseDetail(id){
  const x=purchases.find(p=>p.id===id);if(!x)return;currentPurchaseId=id;
@@ -623,6 +634,7 @@ document.querySelectorAll(".bottom-item").forEach(btn=>{
 
 $("purchaseAddBtn").onclick=openPurchaseAdd;
 $("purchaseCancelBtn").onclick=()=>$("purchaseDlg").close();
+$("purchaseDeleteBtn").onclick=()=>deletePurchase($("purchaseId").value);
 $("receiptCancelBtn").onclick=()=>$("receiptDlg").close();
 $("detailCloseBtn").onclick=()=>$("purchaseDetailDlg").close();
 $("addPurchaseItemBtn").onclick=()=>addPurchaseItemRow();
@@ -650,6 +662,7 @@ $("receiptForm").addEventListener("submit",async e=>{e.preventDefault();await co
 $("detailEditBtn").onclick=()=>{const id=currentPurchaseId;$("purchaseDetailDlg").close();openPurchaseEdit(id)};
 $("detailReceiptBtn").onclick=()=>{const id=currentPurchaseId;$("purchaseDetailDlg").close();openReceipt(id)};
 $("detailShareBtn").onclick=()=>sharePurchase(currentPurchaseId);
+$("detailDeleteBtn").onclick=()=>deletePurchase(currentPurchaseId);
 
 $("settingsBtn").onclick=()=>alert("설정 기능은 다음 단계에서 추가할 수 있습니다.");
 
