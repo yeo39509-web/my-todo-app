@@ -217,8 +217,8 @@ textarea{min-height:80px;resize:vertical}.form-actions{display:flex;gap:8px;marg
 <div class="detail-section"><h3>구매 정보</h3><div class="detail-info" id="detailInfo"></div></div>
 <div class="detail-section"><h3>품목</h3><div class="detail-info" id="detailItems"></div></div>
 <div class="detail-section" id="detailPhotoSection" style="display:none"><h3>입고 사진</h3><div class="photo-box" id="detailPhotos"></div></div>
-<div class="share-note">입고 완료 후 <b>카톡 공유</b>를 누르면 휴대폰의 공유 화면에서 카카오톡을 선택해 사진과 내용을 보낼 수 있습니다.</div>
-<div class="purchase-actions"><button type="button" id="detailEditBtn">수정</button><button type="button" class="primary" id="detailReceiptBtn">입고 처리</button><button type="button" id="detailShareBtn">카톡 공유</button><button type="button" id="detailDeleteBtn" style="border-color:#e35b5b;color:#c62828">삭제</button></div>
+<div class="share-note">입고 완료 후 <b>카톡 공유</b>를 누르면 메시지를 먼저 클립보드에 복사한 뒤 휴대폰 공유 화면을 엽니다. 카카오톡이 문구를 자동 입력하지 않는 경우 <b>붙여넣기</b>로 바로 입력할 수 있습니다.</div>
+<div class="purchase-actions"><button type="button" id="detailEditBtn">수정</button><button type="button" class="primary" id="detailReceiptBtn">입고 처리</button><button type="button" id="detailShareBtn">💬 카톡 공유</button><button type="button" id="detailCopyBtn">📋 메시지 복사</button><button type="button" id="detailDeleteBtn" style="border-color:#e35b5b;color:#c62828">삭제</button></div>
 </div>
 </dialog>
 
@@ -412,16 +412,43 @@ function openPurchaseDetail(id){
  const photos=x.photos||[];$("detailPhotoSection").style.display=photos.length?"block":"none";$("detailPhotos").innerHTML=photos.map(p=>`<div class="photo-thumb"><img src="${p.data}"></div>`).join("");
  $("detailReceiptBtn").style.display=x.status==="done"?"none":"block";$("detailShareBtn").style.display=x.status==="done"?"block":"none";$("purchaseDetailDlg").showModal();
 }
+function getPurchaseShareText(x){
+ return `[구매품 입고 완료]\n품목 : ${(x.items||[]).map(i=>i.name).join(", ")||"-"}\n수량 : ${x.receiptQty||"-"}\n입고일 : ${x.receiptDate||"-"}\n담당자 : ${x.manager||"-"}\n입고 확인 사진입니다.`;
+}
+async function copyPurchaseMessage(id,show=true){
+ const x=purchases.find(p=>p.id===id);if(!x)return false;
+ const text=getPurchaseShareText(x);
+ try{
+  if(navigator.clipboard&&window.isSecureContext){await navigator.clipboard.writeText(text);}
+  else{const ta=document.createElement("textarea");ta.value=text;ta.style.position="fixed";ta.style.opacity="0";document.body.appendChild(ta);ta.focus();ta.select();document.execCommand("copy");ta.remove();}
+  if(show)alert("입고 완료 메시지가 복사되었습니다.\n카카오톡에서 붙여넣어 보내세요.");
+  return true;
+ }catch(e){if(show)alert("메시지 복사에 실패했습니다. 다시 시도해 주세요.");return false;}
+}
 async function sharePurchase(id){
  const x=purchases.find(p=>p.id===id);if(!x)return;
- const photos=x.photos||[];const text=`[구매품 입고 완료]\n품목 : ${(x.items||[]).map(i=>i.name).join(", ")}\n수량 : ${x.receiptQty||"-"}\n입고일 : ${x.receiptDate||"-"}\n담당자 : ${x.manager||"-"}\n입고 확인 사진입니다.`;
+ const photos=x.photos||[];const text=getPurchaseShareText(x);
  try{
+  // 카카오톡이 Web Share의 text 값을 무시하는 경우를 대비해 먼저 메시지를 클립보드에 저장합니다.
+  await copyPurchaseMessage(id,false);
   if(navigator.share){
-   const files=[];for(let i=0;i<photos.length;i++){const p=photos[i];const blob=await (await fetch(p.data)).blob();files.push(new File([blob],p.name||`입고사진${i+1}.jpg`,{type:p.type||blob.type||"image/jpeg"}))}
-   const data=files.length?{title:"구매품 입고 완료",text,files}:{title:"구매품 입고 완료",text};
-   if(!files.length||!navigator.canShare||navigator.canShare({files}))await navigator.share(data);else await navigator.share({title:"구매품 입고 완료",text});
-  }else{await navigator.clipboard?.writeText(text);alert("카카오톡 공유는 휴대폰에서 사용하는 것을 권장합니다. 내용이 클립보드에 복사되었습니다.")}
- }catch(e){if(e.name!=="AbortError")alert("공유를 취소했거나 현재 기기에서 공유를 지원하지 않습니다.")}
+   const files=[];
+   for(let i=0;i<photos.length;i++){
+    try{
+     const p=photos[i];
+     const blob=await (await fetch(p.data)).blob();
+     files.push(new File([blob],p.name||`입고사진${i+1}.jpg`,{type:p.type||blob.type||"image/jpeg"}));
+    }catch(e){}
+   }
+   const canShareFiles=files.length&&navigator.canShare&&navigator.canShare({files});
+   if(canShareFiles) await navigator.share({title:"구매품 입고 완료",text,files});
+   else await navigator.share({title:"구매품 입고 완료",text});
+  }else{
+   alert("이 기기에서는 공유 기능을 지원하지 않습니다.\n입고 완료 메시지가 클립보드에 복사되었습니다. 카카오톡에서 붙여넣어 보내세요.");
+  }
+ }catch(e){
+  if(e.name!=="AbortError")alert("공유를 취소했거나 현재 기기에서 공유를 지원하지 않습니다.\n메시지는 클립보드에 복사되어 있습니다.");
+ }
 }
 
 function renderCalendar(){
@@ -663,6 +690,7 @@ $("receiptForm").addEventListener("submit",async e=>{e.preventDefault();await co
 $("detailEditBtn").onclick=()=>{const id=currentPurchaseId;$("purchaseDetailDlg").close();openPurchaseEdit(id)};
 $("detailReceiptBtn").onclick=()=>{const id=currentPurchaseId;$("purchaseDetailDlg").close();openReceipt(id)};
 $("detailShareBtn").onclick=()=>sharePurchase(currentPurchaseId);
+$("detailCopyBtn").onclick=()=>copyPurchaseMessage(currentPurchaseId,true);
 $("detailDeleteBtn").onclick=()=>deletePurchase(currentPurchaseId);
 
 $("settingsBtn").onclick=()=>alert("설정 기능은 다음 단계에서 추가할 수 있습니다.");
