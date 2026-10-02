@@ -88,10 +88,9 @@ textarea{min-height:80px;resize:vertical}.form-actions{display:flex;gap:8px;marg
 .purchase-quick-add input{border-color:#cfe1f5;background:#fff}
 .purchase-quick-add button{background:#18a66a}
 .purchase-home{padding:0 0 20px}
-.purchase-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-bottom:12px}
-.purchase-stat{border:1px solid #e5e8ec;border-radius:10px;padding:9px 7px;text-align:center;background:#fff}
-.purchase-stat strong{display:block;font-size:17px}.purchase-stat span{font-size:9px;color:#777}
-.purchase-filter{display:flex;gap:6px;margin-bottom:10px;overflow:auto}.purchase-filter button{border:0;background:#f2f4f7;border-radius:17px;padding:7px 11px;font-size:10px;white-space:nowrap}.purchase-filter button.active{background:var(--blue);color:#fff}
+.purchase-tabs{display:flex;gap:7px;padding:4px 12px 11px;overflow:auto;background:#fff;border-bottom:1px solid var(--line)}
+.purchase-tabs button{border:0;background:#f2f4f7;color:#555d66;padding:7px 12px;border-radius:18px;white-space:nowrap;font-size:11px}
+.purchase-tabs button.active{background:var(--blue);color:#fff}
 .purchase-search{width:100%;height:38px;border:1px solid #e1e5ea;border-radius:9px;padding:0 11px;font-size:11px;margin-bottom:10px}
 .purchase-card{border:1px solid #e2e6ea;border-radius:11px;padding:11px;margin-bottom:8px;background:#fff;box-shadow:0 1px 2px #00000008;cursor:pointer}
 .purchase-card.pending{border-color:#f0d58a}.purchase-card.done{border-color:#b9dfc7;background:#fcfffd}
@@ -131,16 +130,11 @@ textarea{min-height:80px;resize:vertical}.form-actions{display:flex;gap:8px;marg
 
 <div id="purchaseView" style="display:none">
   <div class="purchase-home">
-    <div class="purchase-summary">
-      <div class="purchase-stat"><strong id="purchaseAllCount">0</strong><span>전체</span></div>
-      <div class="purchase-stat"><strong id="purchasePendingCount">0</strong><span>입고 대기</span></div>
-      <div class="purchase-stat"><strong id="purchaseDoneCount">0</strong><span>입고 완료</span></div>
-    </div>
-    <div class="purchase-filter">
-      <button class="active" data-pfilter="all">전체</button>
-      <button data-pfilter="pending">입고 대기</button>
-      <button data-pfilter="done">입고 완료</button>
-    </div>
+    <nav class="purchase-tabs" id="purchaseTabs">
+      <button class="active" data-pfilter="all">전체 <span class="chip-count" id="purchaseAllCount">0</span></button>
+      <button data-pfilter="pending">입고 대기 <span class="chip-count" id="purchasePendingCount">0</span></button>
+      <button data-pfilter="done">입고 완료 <span class="chip-count" id="purchaseDoneCount">0</span></button>
+    </nav>
     <input class="purchase-search" id="purchaseSearch" placeholder="품목명, 구매처, 담당자 검색...">
     <div id="purchaseList"></div>
   </div>
@@ -569,10 +563,9 @@ function exportToExcel(){
 .purchase-quick-add input{border-color:#cfe1f5;background:#fff}
 .purchase-quick-add button{background:#18a66a}
 .purchase-home{padding:0 0 20px}
-.purchase-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-bottom:12px}
-.purchase-stat{border:1px solid #e5e8ec;border-radius:10px;padding:9px 7px;text-align:center;background:#fff}
-.purchase-stat strong{display:block;font-size:17px}.purchase-stat span{font-size:9px;color:#777}
-.purchase-filter{display:flex;gap:6px;margin-bottom:10px;overflow:auto}.purchase-filter button{border:0;background:#f2f4f7;border-radius:17px;padding:7px 11px;font-size:10px;white-space:nowrap}.purchase-filter button.active{background:var(--blue);color:#fff}
+.purchase-tabs{display:flex;gap:7px;padding:4px 12px 11px;overflow:auto;background:#fff;border-bottom:1px solid var(--line)}
+.purchase-tabs button{border:0;background:#f2f4f7;color:#555d66;padding:7px 12px;border-radius:18px;white-space:nowrap;font-size:11px}
+.purchase-tabs button.active{background:var(--blue);color:#fff}
 .purchase-search{width:100%;height:38px;border:1px solid #e1e5ea;border-radius:9px;padding:0 11px;font-size:11px;margin-bottom:10px}
 .purchase-card{border:1px solid #e2e6ea;border-radius:11px;padding:11px;margin-bottom:8px;background:#fff;box-shadow:0 1px 2px #00000008;cursor:pointer}
 .purchase-card.pending{border-color:#f0d58a}.purchase-card.done{border-color:#b9dfc7;background:#fcfffd}
